@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>取色器</title>
+<style type="text/css">
+			body{margin: 0;}
+			.module-content{
+				min-width: 770px;
+				max-width: 1000px;
+				width: 100%;
+				color: #000;
+				margin: 0 auto;
+			}
+			.module-head{
+				text-align: center;
+				font-weight: 500;
+				margin: 0;
+				font-size: 30px;
+				height: 100px;
+				line-height: 100px;
+			}
+			.module-check-img-box{
+				width: 77%;
+				float: left;
+			}
+			.module-check-box{
+				width: 20%;
+				float: right;
+			}
+			.module-list-name{
+				font-size: 16px;
+				height: 50px;
+				line-height: 50px;
+			}
+			.module-box{
+				width: 100px;
+				height: 100px;
+				overflow: hidden;
+				position: relative;
+			}
+			.module-box input{
+				width: 100px;
+				height: 100px;
+				opacity: 0;
+				position: absolute;
+				top: 0;
+				left: 0;
+				z-index: 10;
+			}
+			.module-box img{
+				width: 100px;
+				height: 100px;
+			}
+			.module-file-box{
+				min-width: 400px;
+				min-height: 400px;
+				max-height: 1000px;
+				overflow: auto;
+				border: 1px solid #eee;
+				border-radius: 5px;
+				padding: 10px;
+			}
+			.module-check{
+				position: relative;
+				display: inline-block;
+				height: 50px;
+				line-height: 50px;
+			}
+			.module-check span{
+				display: block;
+				background:#fff url(img/check.png) no-repeat center center/16px 16px;
+				width: 16px;
+				height: 50px;
+				position: absolute;
+				top: 0;
+				left: 0;
+				z-index: 10;
+			}
+			.module-check input:checked + span{
+				background:#fff url(img/checked.png) no-repeat center center/16px 16px;
+			}
+			.clear-float:after{
+				content: '';
+				display: block;
+				height: 0px;
+				clear: both;
+			}
+			.module-show-area section{
+				float: left;
+				width: 50%;
+				font-size: 0;
+			}
+			.module-show-area section p{
+				line-height: 30px;
+				display: inline-block;
+				width: 200px;
+				font-size: 16px;
+			}
+			.module-show-area section p span{
+				display: inline-block;
+				width: 16px;
+				height: 16px;
+				margin-right: 5px;
+			}
+			.show-all-color{
+				width: 100px;
+				height: 40px;
+				line-height: 40px;
+				text-align: center;
+				font-size: 14px;
+				color: #fff;
+				border: none;
+				outline: none;
+				background: blue;
+				border-radius: 5px;
+				margin: 20px 0;
+			}
+		</style>
+</head>
+<body>
+<div class="module-content">
+<h1 class="module-head">在线取色器</h1>
+<div class="clear-float">
+<div class="module-check-img-box">
+<div class="module-list-name">请选择一张本地图片：</div>
+<div class="module-box">
+<img src="img/tu.png" />
+<input type="file" id="file" onchange="setFiles(this,'showImg')" class="form-control" placeholder="请选择一张本地图片">
+</div>
+<div class="module-list-name">图片显示区域：</div>
+<div class="module-file-box">
+<img id="showImg" onclick="colorPicker(0,{showImg:'showImg',area16:'area-16',areaRgba:'area-rgba',check16:'check16',checkRgb:'checkRgb',checkAlike:'checkAlike',checkRange:'checkRange'})" src="img/tu.png" />
+</div>
+</div>
+<div class="module-check-box">
+<div class="module-list-name">
+<label class="module-check">
+<input type="checkbox" id="checkRange" checked="checked">
+<span></span>
+是否模糊周边颜色
+</label>
+</div>
+<div class="module-list-name">
+<label class="module-check">
+<input type="checkbox" id="check16" onclick="check({area16:'area-16p',areaRgba:'area-rgbap',check16:'check16',checkRgb:'checkRgb'})" checked="checked">
+<span></span>
+是否十六进制显示
+</label>
+</div>
+<div class="module-list-name">
+<label class="module-check">
+<input type="checkbox" id="checkRgb" onclick="check({area16:'area-16p',areaRgba:'area-rgbap',check16:'check16',checkRgb:'checkRgb'})" checked="checked">
+<span></span>
+是否RGB显示
+</label>
+</div>
+<div class="module-list-name">
+<label class="module-check">
+<input type="checkbox" id="checkAlike">
+<span></span>
+显示相同颜色(此项由于较大，打印在控制台！)
+</label>
+</div>
+</div>
+</div>
+<div>
+<button class="show-all-color" onclick="colorPicker(1,{showImg:'showImg',area16:'area-16',areaRgba:'area-rgba',check16:'check16',checkRgb:'checkRgb',checkAlike:'checkAlike',checkRange:'checkRange'})">显示所有颜色</button>
+</div>
+<div class="module-show-area">
+<section id="area-16p">
+<div class="module-list-name">十六进制显示区域：</div>
+<div id="area-16"></div>
+</section>
+<section id="area-rgbap">
+<div class="module-list-name">RBGA显示区域：</div>
+<div id="area-rgba"></div>
+</section>
+</div>
+</div>
+<script type="text/javascript">
+			(() => {
+				let obj = {};
+				//获取DOM对象的方法
+				let $ = function(id){
+					return document.getElementById(id);
+				}
+				//获取预览图片路径
+				let getObjectURL = function(file){
+				    let url = null ; 
+				    if (window.createObjectURL!=undefined) { // basic
+				        url = window.createObjectURL(file) ;
+				    } else if (window.URL!=undefined) { // mozilla(firefox)
+				        url = window.URL.createObjectURL(file) ;
+				    } else if (window.webkitURL!=undefined) { // webkit or chrome
+				        url = window.webkitURL.createObjectURL(file) ;
+				    }
+				    return url ;
+				}
+				//十六进制转换器
+				let hexadecimal = function(num) {
+                    var r = parseInt(num).toString(16);
+                    if (r.length == 1) {
+                        return '0' + r;
+                    }
+                    return r.toUpperCase();
+                }
+				//判断颜色是否已存在
+                let checkHasColor = function(arr, r, g, b) {
+                    for (var i = 0; i < arr.length; i++) {
+                        var n = equalsColor(arr[0], arr[1], arr[2], r, g, b);
+                        if (n >= 0.8) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+                //判断相同颜色
+                let equalsColor = function(r1, g1, b1, r2, g2, b2) {
+                    return (255 - Math.abs(r1 - r2) * 0.297 - Math.abs(g1 - g2) * 0.593 - Math.abs(b1 - b2) * 0.11) / 255;
+                }
+                //建立canvas画布
+                let canvas = function(obj,size,param){
+                	let canvas = document.createElement("canvas");
+                    if (!canvas.getContext) {
+                        alert("很遗憾，您浏览器版本太老了，无法使用我们的小工具 ！");
+                        return;
+                    }
+                    
+                    let ctx = canvas.getContext("2d");
+                    let str = "",str1 = "";
+                    let img = $(obj.showImg);
+                    let imgWidth = img.width;
+                    let imhHeight = img.height;
+                    let imgData = null;
+                    let newImg = new Image();
+                    
+                    newImg.onload = function(){
+                    	canvas.width = newImg.width;
+                        canvas.height = newImg.height;
+                        ctx.drawImage(newImg, 0, 0);
+                        if(param === 0){
+                        	let x = newImg.width * size.x / imgWidth;
+	                        let y = newImg.height * size.y / imhHeight;
+	                        let imgData = ctx.getImageData(x, y, 1, 1);
+	                        let color16 = '#'+ hexadecimal(imgData.data[0]) + hexadecimal(imgData.data[1]) + hexadecimal(imgData.data[2])
+	                        str1 = '<p><span style="background:'+ color16 +'"></span>'+ imgData.data.slice(0,3) +'</p>';
+	                        str = '<p><span style="background:'+ color16 +'"></span>'+ color16 +'</p>';
+                        }else if(param === 1){
+                        	if (!confirm("显示所有颜色会比较慢，您是否要继续进行该操作？")) {
+		                        return;
+		                    }
+                        	let flag = false;
+	                        let indexRange;
+	                        let jsonObj = {};
+	                        let arr = [];
+	                        let check = [];
+	                        if ($(obj.checkRange).checked) {
+	                            flag = true;
+	                            indexRange = 10;
+	                        } else {
+	                            indexRange = 1;
+	                        }
+	                        for (let i = 0; i < imgWidth; i += indexRange) {
+	                            for (let j = 0; j < imhHeight; j += indexRange) {
+	                                let imgData = ctx.getImageData(i, j, indexRange, indexRange);
+	                                let color = '#' + hexadecimal(imgData.data[0]) + hexadecimal(imgData.data[1]) + hexadecimal(imgData.data[2]);
+	                                if (flag) {
+	                                    if (!checkHasColor(check, imgData.data[0], imgData.data[1], imgData.data[2]) && arr.indexOf(color) === -1) {
+	                                        arr.push(color);
+	                                        check.push([imgData.data[0], imgData.data[1], imgData.data[2]]);
+	                                    }
+	                                } else {
+	                                    if (arr.indexOf(color) === -1) {
+	                                        arr.push(color);
+	                                        check.push([imgData.data[0], imgData.data[1], imgData.data[2]]);
+	                                    }
+	                                }
+	                            }
+	                        }
+	                        for (let index = 0; index < arr.length; index++) {
+	                            str += '<p><span style="background-color:' + arr[index] + '"></span>' + arr[index] +'</p>';
+	                            str1 += '<p><span style="background-color:' + arr[index] + '"></span>' + check[index] +'</p>';
+	                        }
+	                        if($(obj.checkAlike).checked){
+	                        	for (let i = 0; i < imgWidth; i+=3) {
+	                        		let arr = {};
+		                            for (let j = 0; j < imhHeight; j+=3) {
+		                                let imgData = ctx.getImageData(i, j, indexRange, indexRange);
+	                                	let color = '#' + hexadecimal(imgData.data[0]) + hexadecimal(imgData.data[1]) + hexadecimal(imgData.data[2]);
+		                            	arr[j] = color;
+		                            }
+		                            jsonObj[i] = arr;
+		                        }
+	                        	console.log(JSON.stringify(jsonObj));
+	                        }
+                        }
+                        $(obj.area16).innerHTML = str;
+	                    $(obj.areaRgba).innerHTML = str1;
+                    }
+                    newImg.src = img.src;
+                }
+				window.setFiles = function(e,areaId){
+					e = e || window.event;
+					if (!window.File || !window.FileReader || !window.FileList || !window.Blob) {
+                        alert("很遗憾，您浏览器版本太老了，无法使用我们的小工具 ！");
+                        return;
+                    }
+					if(e.files.length > 0)$(areaId).src = getObjectURL(e.files[0]);
+				}
+				window.colorPicker = function(param,obj,e){
+					e = e || window.event;
+					$(obj.areaRgba).innerHTML = '';
+					$(obj.area16).innerHTML = '';
+					let size = {};
+	                if(param === 0){
+	                	if (e["offsetX"]) {
+		                    size.x = e.offsetX;
+		                    size.y = e.offsetY;
+		                } else {
+		                    let offset = img.getBoundingClientRect();
+		                    size.x = touch.clientX - offset.left;
+		                    size.y = touch.clientY - offset.top;
+		                }
+	                }
+					canvas(obj,size,param);
+				}
+				window.check = function(obj){
+					console.log($(obj.check16).checked);
+					if($(obj.check16).checked){
+	                	$(obj.area16).style.display = 'block';
+	                }else{
+	                	$(obj.area16).style.display = 'none';
+	                }
+	                if($(obj.checkRgb).checked){
+	                	$(obj.areaRgba).style.display = 'block';
+	                }else{
+	                	$(obj.areaRgba).style.display = 'none';
+	                }
+				}
+			})()
+		</script>
+</body>
+</html>
